@@ -26,7 +26,7 @@ void ASTUAICharacter::OnDeath()
 {
     Super::OnDeath();
 
-    const auto STUController = Cast<ASTUAIController>(Controller);
+    const auto STUController = Cast<AAIController>(Controller);
     if(STUController && STUController->BrainComponent)
     {
         STUController->BrainComponent->Cleanup();
