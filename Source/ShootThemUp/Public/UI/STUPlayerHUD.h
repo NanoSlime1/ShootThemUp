@@ -25,6 +25,8 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool GetCurrentWeaponAmmoData(FAmmoData& AmmoData) const;
+
+    bool GetGameModeData();
     
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool IsPlayerAlive() const;
@@ -40,6 +42,7 @@ public:
 
 private:
     void OnHealthChanged(float Health, float HealthDelta);
+    void OnNewPawn(APawn* Pawn);
 };
 
 

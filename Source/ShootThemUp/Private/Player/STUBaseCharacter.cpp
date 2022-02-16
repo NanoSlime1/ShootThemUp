@@ -20,22 +20,9 @@ ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer &ObjInit)
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SpringArmComponent");
-    SpringArmComponent->SetupAttachment(GetRootComponent());
-    SpringArmComponent->bUsePawnControlRotation = true;
-    SpringArmComponent->SocketOffset = FVector(0.0f, 75.0f, 100.0f);
-
-    CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-    CameraComponent->SetupAttachment(SpringArmComponent);
-
     HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
 
-    HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
-    HealthTextComponent->SetupAttachment(GetRootComponent());
-    HealthTextComponent->SetOwnerNoSee(true);
-
     WeaponComponent = CreateDefaultSubobject<USTUWeaponComponent>("WeaponComponent");
-
 }
 
 // Called when the game starts or when spawned
@@ -44,7 +31,6 @@ void ASTUBaseCharacter::BeginPlay()
     Super::BeginPlay();
     
     check(HealthComponent);
-    check(HealthTextComponent);
     check(GetCharacterMovement());
     check(GetMesh());
     
@@ -68,7 +54,7 @@ void ASTUBaseCharacter::Tick(float DeltaTime)
 
 void ASTUBaseCharacter::OnHealthChanged (float Health, float HealthDelta) const
 {
-    HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
+   
 }
 
 void ASTUBaseCharacter::OnGroundLanded(const FHitResult &Hit)
@@ -83,34 +69,9 @@ void ASTUBaseCharacter::OnGroundLanded(const FHitResult &Hit)
 
 
 
-// Called to bind functionality to input
-void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent)
-{
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
-    check(PlayerInputComponent);
-    check(WeaponComponent);
-
-    InputComponent->BindAxis("MoveForward", this, &ASTUBaseCharacter::MoveForward);
-    InputComponent->BindAxis("MoveRight", this, &ASTUBaseCharacter::MoveRight);
-
-    InputComponent->BindAxis("LookUp", this, &ASTUBaseCharacter::AddControllerPitchInput);
-    InputComponent->BindAxis("TurnAround", this, &ASTUBaseCharacter::AddControllerYawInput);
-
-    InputComponent->BindAction("Jump", IE_Pressed, this, &ASTUBaseCharacter::Jump);
-
-    InputComponent->BindAction("Run", IE_Pressed, this, &ASTUBaseCharacter::OnStartRunning);
-    InputComponent->BindAction("Run", IE_Released, this, &ASTUBaseCharacter::OnStopRunning);
-
-    InputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &USTUWeaponComponent::StartFire);
-    InputComponent->BindAction("Fire", IE_Released, WeaponComponent, &USTUWeaponComponent::StopFire);
-
-    InputComponent->BindAction("ChangeWeapon", IE_Pressed, WeaponComponent, &USTUWeaponComponent::NextWeapon);
-    InputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &USTUWeaponComponent::Reload);
-}
-
 bool ASTUBaseCharacter::IsRunning() const
 {
-    return ReadyToRun && IsMovingForward && !GetVelocity().IsZero();
+    return false;
 }
 
 float ASTUBaseCharacter::GetMovementDirection() const
@@ -123,29 +84,6 @@ float ASTUBaseCharacter::GetMovementDirection() const
     const auto Degrees = FMath::RadiansToDegrees(AngleBetween);
 
     return CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
-}
-
-void ASTUBaseCharacter::MoveForward(float Amount)
-{
-    IsMovingForward = Amount > 0.0f;
-    if (Amount == 0) return;
-    AddMovementInput(GetActorForwardVector(), Amount);
-}
-
-void ASTUBaseCharacter::MoveRight(float Amount)
-{
-    if (Amount == 0) return;
-    AddMovementInput(GetActorRightVector(), Amount);
-}
-
-void ASTUBaseCharacter::OnStartRunning()
-{
-    ReadyToRun = true;
-}
-
-void ASTUBaseCharacter::OnStopRunning()
-{
-    ReadyToRun = false;
 }
 
 void ASTUBaseCharacter::OnDeath()
@@ -163,6 +101,14 @@ void ASTUBaseCharacter::OnDeath()
 
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(true);
+}
+
+void ASTUBaseCharacter::SetPlayerColor(const FLinearColor& Color)
+{
+    const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+    if(!MaterialInst) return;
+
+    MaterialInst->SetVectorParameterValue(MaterialColorName, Color);
 }
 
 

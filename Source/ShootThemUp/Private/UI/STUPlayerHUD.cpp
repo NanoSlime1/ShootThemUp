@@ -43,12 +43,11 @@ bool USTUPlayerHUD::IsPlayerSpectating() const
 
 bool USTUPlayerHUD::Initialize()
 {
-    const auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(GetOwningPlayerPawn());
-    if(HealthComponent)
+    if(GetOwningPlayer())
     {
-        HealthComponent->OnChangeHealth.AddUObject(this, &USTUPlayerHUD::OnHealthChanged);
+        GetOwningPlayer()->GetOnNewPawnNotifier().AddUObject(this, &USTUPlayerHUD::OnNewPawn);
+        OnNewPawn(GetOwningPlayerPawn());
     }
-    
     
     return Super::Initialize();
 }
@@ -60,4 +59,13 @@ void USTUPlayerHUD::OnHealthChanged(float Health, float HeathDelta)
         OnTakeDamage();
     }
 
+}
+
+void USTUPlayerHUD::OnNewPawn(APawn* Pawn)
+{
+    const auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(Pawn);
+    if(HealthComponent && !HealthComponent->OnChangeHealth.IsBoundToObject(this))
+    {
+        HealthComponent->OnChangeHealth.AddUObject(this, &USTUPlayerHUD::OnHealthChanged);
+    }
 }
