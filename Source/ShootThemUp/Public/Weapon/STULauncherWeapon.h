@@ -7,6 +7,7 @@
 #include "STULauncherWeapon.generated.h"
 
 class ASTURocket;
+class USoundCue;
 
 /**
  * 

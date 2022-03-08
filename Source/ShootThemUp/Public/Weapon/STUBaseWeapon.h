@@ -10,6 +10,7 @@
 
 class USkeletalMeshComponent;
 class UNiagaraSystem;
+class USoundCue;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUBaseWeapon : public AActor
@@ -23,6 +24,7 @@ public:
     
     virtual void StartFire();
     virtual void StopFire();
+    bool IsFiring() const;
 
     void ChangeClip();
     bool CanReload() const;
@@ -34,6 +36,8 @@ public:
     
     bool IsAmmoFull() const;
     bool IsAmmoEmpty() const;
+
+    virtual void Zoom(bool Enable) {};
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
@@ -53,6 +57,12 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     UNiagaraSystem* MuzzleFX;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* FireSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* NoAmmoSound;
     
     bool GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const;
     FVector GetMuzzleWorldLocation() const;
@@ -61,13 +71,12 @@ protected:
     
     virtual bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const;
     virtual void MakeShot();
-    
 	virtual void BeginPlay() override;
 
     void DecreaseAmmo();
-
     bool IsClipEmpty() const;
 
+    bool FireInProgress = false;
 
     void LogAmmo();
 

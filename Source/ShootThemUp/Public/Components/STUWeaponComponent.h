@@ -23,6 +23,7 @@ public:
     void StopFire();
     virtual void NextWeapon();
     void Reload();
+    bool IsFiring() const;
 
     bool GetCurrentWeaponUIData(FWeaponUIData& UIData) const;
     bool GetCurrentWeaponAmmoData(FAmmoData& AmmoData) const;
@@ -30,7 +31,8 @@ public:
     bool TryToAddAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType, int32 ClipsAmount);
     bool NeedAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType);
 
-
+    void Zoom(bool Enable);
+    
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

@@ -57,6 +57,7 @@ void USTUWeaponComponent::EquipWeapon(int32 WeaponIndex)
     if (CurrentWeapon)
     {
         CurrentWeapon->StopFire();
+        CurrentWeapon->Zoom(false);
         AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), WeaponSecondSocket);
     }
 
@@ -237,6 +238,11 @@ void USTUWeaponComponent::Reload()
     ChangeClip();
 }
 
+bool USTUWeaponComponent::IsFiring() const
+{
+    return CurrentWeapon && CurrentWeapon->IsFiring();
+}
+
 bool USTUWeaponComponent::GetCurrentWeaponUIData(FWeaponUIData &UIData) const
 {
     if (CurrentWeapon)
@@ -279,5 +285,13 @@ bool USTUWeaponComponent::NeedAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType)
         }
     }
     return false;
+}
+
+void USTUWeaponComponent::Zoom(bool Enable)
+{
+    if(CurrentWeapon)
+    {
+        CurrentWeapon->Zoom(Enable);
+    }
 }
 

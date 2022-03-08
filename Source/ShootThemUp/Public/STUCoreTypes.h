@@ -2,6 +2,7 @@
 #include "STUCoreTypes.generated.h"
 
 class ASTUBaseWeapon;
+class USoundCue;
 
 //Delegates for BaseWeapon
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnClipEmptySignature, ASTUBaseWeapon*);
@@ -84,6 +85,9 @@ struct FImpactData
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     FDecalData DecalData;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* ImpactSound;
 };
 
 USTRUCT(BlueprintType)
@@ -112,3 +116,32 @@ struct FGameData
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game", meta = (ClampMin = "1", ClampMax = "20"))
     int32 MinRoundTimeForRespawn = 5; //in seconds
 };
+
+UENUM(BlueprintType)
+enum class ESTUMatchState: uint8
+{
+    WaitingToStart = 0,
+    InProgress,
+    Pause,
+    GameOver
+};
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchStateChangedSignature, ESTUMatchState);
+
+USTRUCT(BlueprintType)
+struct FLevelData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game")
+    FName LevelName = NAME_None;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game")
+    FName LevelDisplayName = NAME_None;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game")
+    UTexture2D* LevelThumb;
+
+};
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelSelectedSignature, const FLevelData&);

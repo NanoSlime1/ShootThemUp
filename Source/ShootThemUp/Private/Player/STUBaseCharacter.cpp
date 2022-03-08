@@ -9,6 +9,8 @@
 #include "GameFramework/Controller.h"
 #include "Weapon/STUBaseWeapon.h"
 #include "Components/STUWeaponComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacters, All, All);
 
@@ -51,6 +53,20 @@ void ASTUBaseCharacter::Tick(float DeltaTime)
     
 }
 
+void ASTUBaseCharacter::TurnOff()
+{
+    WeaponComponent->StopFire();
+    WeaponComponent->Zoom(false);
+    Super::TurnOff();
+}
+
+void ASTUBaseCharacter::Reset()
+{
+    WeaponComponent->StopFire();
+    WeaponComponent->Zoom(false);
+    Super::Reset();
+}
+
 
 void ASTUBaseCharacter::OnHealthChanged (float Health, float HealthDelta) const
 {
@@ -59,12 +75,12 @@ void ASTUBaseCharacter::OnHealthChanged (float Health, float HealthDelta) const
 
 void ASTUBaseCharacter::OnGroundLanded(const FHitResult &Hit)
 {
-    const auto FallVelosityZ = -GetVelocity().Z;
+    const auto FallVelocityZ = -GetVelocity().Z;
 
-    if (FallVelosityZ < LandedDamageVelocity.X) return;
+    if (FallVelocityZ < LandedDamageVelocity.X) return;
 
-    const auto FinalDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelosityZ);
-    TakeDamage(FinalDamage, FDamageEvent{}, nullptr, nullptr);
+    const auto FinalDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelocityZ);
+    TakeDamage(FinalDamage, FPointDamageEvent{}, nullptr, nullptr);
 }
 
 
@@ -88,7 +104,6 @@ float ASTUBaseCharacter::GetMovementDirection() const
 
 void ASTUBaseCharacter::OnDeath()
 {
-    //PlayAnimMontage(DeathAnimMontage);
 
     GetCharacterMovement()->DisableMovement();
     SetLifeSpan(LifeSpanOnDeath);
@@ -98,9 +113,13 @@ void ASTUBaseCharacter::OnDeath()
     }
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
     WeaponComponent->StopFire();
+    WeaponComponent->Zoom(false);
 
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(true);
+
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
+    
 }
 
 void ASTUBaseCharacter::SetPlayerColor(const FLinearColor& Color)

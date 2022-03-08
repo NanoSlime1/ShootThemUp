@@ -7,10 +7,11 @@
 #include "STUPlayerController.h"
 #include "STURespawnComponent.h"
 #include "STUUtils.h"
+#include "STUWeaponComponent.h"
 #include "UI/STUGameHUD.h"
 #include "Player/STUPlayerState.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogGameModeBase, All, All);
+DEFINE_LOG_CATEGORY_STATIC(LogSTUGameModeBase, All, All);
 
 ASTUGameModeBase::ASTUGameModeBase()
 {
@@ -30,11 +31,13 @@ void ASTUGameModeBase::StartPlay()
     
     CurrentRound = 1;
     StartRound();
+
+    SetMatchState(ESTUMatchState::InProgress);
 }
 
 UClass* ASTUGameModeBase::GetDefaultPawnClassForController_Implementation(AController* InController)
 {
-    if(InController || InController->IsA(AIPawnClass))
+    if(InController && InController->IsA<AAIController>())
     {
         return AIPawnClass;
     }
@@ -63,6 +66,29 @@ void ASTUGameModeBase::Killed(AController* KillerController, AController* Victim
 void ASTUGameModeBase::RespawnRequest(AController* Controller)
 {
     ResetOnePlayer(Controller);
+}
+
+bool ASTUGameModeBase::SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate)
+{
+    const auto PauseSet = Super::SetPause(PC, CanUnpauseDelegate);
+    if(PauseSet)
+    {
+        StopAllFire();
+        SetMatchState(ESTUMatchState::Pause);
+    }
+
+    return PauseSet;
+}
+
+bool ASTUGameModeBase::ClearPause()
+{
+    const auto PauseCleared = Super::ClearPause();
+    if(PauseCleared)
+    {
+        SetMatchState(ESTUMatchState::InProgress);
+    }
+    
+    return PauseCleared;
 }
 
 void ASTUGameModeBase::SpawnBots()
@@ -139,9 +165,10 @@ void ASTUGameModeBase::CreateTeamsInfo()
 
         PlayerState->SetTeamID(TeamID);
         PlayerState->SetTeamColor(DetermineColorByTeamID(TeamID));
+        PlayerState->SetPlayerName(Controller->IsPlayerController() ? "Player" : "Bot");
         SetPlayerColor(Controller);
         
-        TeamID = TeamID == 1 ? 2 : 1;
+        TeamID =  TeamID == 1? 2 : 1;
     }
 }
 
@@ -151,7 +178,9 @@ FLinearColor ASTUGameModeBase::DetermineColorByTeamID(int32 TeamID) const
     {
         return GameData.TeamColors[TeamID - 1];
     }
-
+    
+    UE_LOG(
+            LogSTUGameModeBase, Warning, TEXT("No color for team id: %i, set to default: %s"), TeamID, *GameData.DefaultTeamColor.ToString());
     return GameData.DefaultTeamColor;
 }
 
@@ -197,7 +226,7 @@ void ASTUGameModeBase::StartRespawn(AController* Controller)
 
 void ASTUGameModeBase::GameOver()
 {
-    UE_LOG(LogGameModeBase, Display, TEXT("----Game over----"));
+    UE_LOG(LogSTUGameModeBase, Display, TEXT("----Game over----"));
     LogPlayerInfo();
 
     for(auto Pawn : TActorRange<APawn>(GetWorld()))
@@ -207,5 +236,27 @@ void ASTUGameModeBase::GameOver()
             Pawn->TurnOff();
             Pawn->DisableInput(nullptr);
         }
+    }
+
+    SetMatchState(ESTUMatchState::GameOver);
+}
+
+void ASTUGameModeBase::SetMatchState(ESTUMatchState State)
+{
+    if(MatchState == State) return;
+
+    MatchState = State;
+    OnMatchStateChanged.Broadcast(State);
+}
+
+void ASTUGameModeBase::StopAllFire()
+{
+    for(auto Pawn : TActorRange<APawn>(GetWorld()))
+    {
+        const auto WeaponComponent = STUUtils::GetSTUPlayerComponent<USTUWeaponComponent>(Pawn);
+        if(!WeaponComponent) continue;
+
+        WeaponComponent->StopFire();
+        WeaponComponent->Zoom(false);
     }
 }
